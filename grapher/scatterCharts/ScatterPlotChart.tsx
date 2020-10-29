@@ -509,10 +509,6 @@ export class ScatterPlotChart
             .some((value) => !isValid(value))
     }
 
-    @computed get categoricalValues() {
-        return this.colorColumn?.sortedUniqNonEmptyStringVals
-    }
-
     @computed private get yAxisConfig() {
         return (
             this.manager.yAxis ?? new AxisConfig(this.manager.yAxisConfig, this)
