@@ -151,6 +151,7 @@ import { ChartComponentClassMap } from "grapher/chart/ChartTypeMap"
 import { ColorSchemeName } from "grapher/color/ColorConstants"
 import { SelectionArray, SelectionManager } from "./SelectionArray"
 import { legacyToOwidTableAndDimensions } from "coreTable/LegacyToOwidTable"
+import { ScatterPlotManager } from "grapher/scatterCharts/ScatterPlotChartConstants"
 
 declare const window: any
 
@@ -210,6 +211,7 @@ export class Grapher
         FooterControlsManager,
         SelectionManager,
         DataTableManager,
+        ScatterPlotManager,
         MapChartManager {
     @observable.ref type = ChartTypeName.LineChart
     @observable.ref id?: number = undefined
@@ -488,21 +490,9 @@ export class Grapher
         )
     }
 
-    @computed private get tableAfterPopulationFilter() {
-        const table = this.tableAfterAuthorTimelineFilter
-        // todo: could make these separate memoized computeds to speed up
-        // todo: add cross filtering. 1 dimension at a time.
-        return this.minPopulationFilter
-            ? table.filterByPopulationExcept(
-                  this.minPopulationFilter,
-                  this.selection.selectedEntityNames
-              )
-            : table
-    }
-
     @computed
-    get tableAfterPopulationFilterAndActiveChartTransform(): OwidTable {
-        const table = this.tableAfterPopulationFilter
+    private get tableAfterAuthorTimelineAndActiveChartTransform(): OwidTable {
+        const table = this.tableAfterAuthorTimelineFilter
         if (!this.isReady || !this.isChartOrMapTab) return table
         return this.chartInstance.transformTable(table)
     }
@@ -523,9 +513,23 @@ export class Grapher
     }
 
     @computed
-    private get tableAfterPopulationAndActiveChartAndTimelineFilters() {
+    get tableAfterAuthorTimelineAndActiveChartTransformAndPopulationFilter() {
+        const table = this.tableAfterAuthorTimelineAndActiveChartTransform
+        // todo: could make these separate memoized computeds to speed up
+        // todo: add cross filtering. 1 dimension at a time.
+        return this.minPopulationFilter
+            ? table.filterByPopulationExcept(
+                  this.minPopulationFilter,
+                  this.selection.selectedEntityNames
+              )
+            : table
+    }
+
+    @computed
+    private get tableAfterAllTransformsAndFilters() {
         const { startTime, endTime } = this
-        const table = this.tableAfterPopulationFilterAndActiveChartTransform
+        const table = this
+            .tableAfterAuthorTimelineAndActiveChartTransformAndPopulationFilter
 
         if (startTime === undefined || endTime === undefined) return table
 
@@ -543,7 +547,7 @@ export class Grapher
     }
 
     @computed get transformedTable() {
-        return this.tableAfterPopulationAndActiveChartAndTimelineFilters
+        return this.tableAfterAllTransformsAndFilters
     }
 
     @observable.ref isMediaCard = false
@@ -730,7 +734,7 @@ export class Grapher
         // times on the timeline for which data may not exist, e.g. when the selected entity
         // doesn't contain data for all years in the table.
         // -@danielgavrilov, 2020-10-22
-        return this.tableAfterPopulationFilterAndActiveChartTransform.getTimesUniqSortedAscForColumns(
+        return this.tableAfterAuthorTimelineAndActiveChartTransformAndPopulationFilter.getTimesUniqSortedAscForColumns(
             columnSlugs
         )
     }
