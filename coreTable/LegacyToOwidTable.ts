@@ -163,8 +163,10 @@ export const legacyToOwidTableAndDimensions = (
         const targetTime = dimension?.targetYear
         if (targetTime !== undefined) {
             variableTable = variableTable
-                .interpolateColumnWithTolerance(valueColumnDef.slug)
-                .filterByTargetTimes([targetTime])
+                .filterByTargetTimes(
+                    [targetTime],
+                    valueColumnDef.display?.tolerance
+                )
                 .dropColumns([timeColumnDef.slug])
         }
 
